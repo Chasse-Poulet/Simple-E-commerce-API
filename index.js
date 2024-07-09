@@ -1,29 +1,10 @@
-const express = require("express");
-const cors = require("cors");
-require("dotenv").config();
+const app = require("./app");
 
-// Config import
-const db = require("./config/mongo");
-
-// Routers import
-const userRouter = require("./components/users/api");
-
-const app = express();
-const port = 3000;
-
-// Config setup
+const db = require("./src/config/mongo");
 db();
 
-app.use(express.json());
-app.use(cors());
+const PORT = process.env.PORT || 3000;
 
-// Routes setup
-app.use("/auth", userRouter);
-
-app.get("/", (req, res) => {
-  res.send("Hello World!");
-});
-
-app.listen(port, () => {
-  console.log(`Example app listening on port ${port}`);
+app.listen(PORT, () => {
+  console.log(`Example app listening on port ${PORT}`);
 });
