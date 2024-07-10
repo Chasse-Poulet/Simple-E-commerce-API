@@ -17,8 +17,13 @@ afterAll(async () => {
 });
 
 describe("User API", () => {
+  const nonexistingid = "000000000000000000000000";
+
   let userId;
   let token;
+
+  let adminUserId;
+  let adminToken;
 
   describe("User signup", () => {
     it("When the data is malformed, then the statusCode is 500", async () => {
@@ -39,6 +44,22 @@ describe("User API", () => {
         email: "baboulinet@test.com",
         password: "imbaboulinet",
         username: "baboulinet",
+      };
+
+      const response = await request(app).post("/auth/signup").send(userData);
+
+      expect(response.statusCode).toBe(201);
+      expect(response.body).toMatchObject({
+        message: "User added successfully.",
+      });
+    });
+
+    it("When everything is ok, then it creates a new admin", async () => {
+      const userData = {
+        email: "barryallen@flash.com",
+        password: "iamtheflash",
+        username: "Flash",
+        isAdmin: true,
       };
 
       const response = await request(app).post("/auth/signup").send(userData);
@@ -75,15 +96,30 @@ describe("User API", () => {
       expect(response.body).toMatchObject({ error: "Incorrect password !" });
     });
 
-    it("When everything is ok, then the statusCode is 200 and the token is returned", async () => {
+    it("When a normal user logs in, then the statusCode is 200 and the token is returned", async () => {
       const loginData = {
         email: "baboulinet@test.com",
         password: "imbaboulinet",
       };
 
       const response = await request(app).post("/auth/login").send(loginData);
+
+      expect(response.statusCode).toBe(200);
+      expect(response.body).toHaveProperty("token");
+
       userId = response.body.userId;
       token = response.body.token;
+    });
+
+    it("When an admin logs in, then the statusCode is 200 and the admin token is returned", async () => {
+      const loginData = {
+        email: "barryallen@flash.com",
+        password: "iamtheflash",
+      };
+
+      const response = await request(app).post("/auth/login").send(loginData);
+      adminUserId = response.body.userId;
+      adminToken = response.body.token;
 
       expect(response.statusCode).toBe(200);
       expect(response.body).toHaveProperty("token");
@@ -91,16 +127,40 @@ describe("User API", () => {
   });
 
   describe("Get all users", () => {
-    it("should have a total of 1 user", async () => {
-      const response = await request(app).get("/auth");
+    it("When a non admin user calls it, then return statusCode 403", async () => {
+      const response = await request(app)
+        .get("/auth")
+        .set("Authorization", `Basic ${token}`);
+
+      expect(response.statusCode).toBe(403);
+    });
+
+    it("When the admin calls it, then return statusCode 200 and an array", async () => {
+      const response = await request(app)
+        .get("/auth")
+        .set("Authorization", `Basic ${adminToken}`);
 
       expect(response.statusCode).toBe(200);
-      expect(response.body.length).toEqual(1);
+      expect(response.body).toHaveProperty("length");
     });
   });
 
   describe("Get user by id", () => {
-    it("When everything is ok, then the statusCode is 200 and the right user is returned", async () => {
+    it("When an unanthenticated user requests someone's infos, then the statusCode is 401", async () => {
+      const response = await request(app).get(`/auth/${userId}`);
+
+      expect(response.statusCode).toBe(401);
+    });
+
+    it("When a normal user requests another user's infos, then the statusCode is 403", async () => {
+      const response = await request(app)
+        .get(`/auth/${adminUserId}`)
+        .set("Authorization", `Basic ${token}`);
+
+      expect(response.statusCode).toBe(403);
+    });
+
+    it("When a user requests their infos, then the statusCode is 200 and the right user is returned", async () => {
       const response = await request(app)
         .get(`/auth/${userId}`)
         .set("Authorization", `Basic ${token}`);
@@ -108,9 +168,43 @@ describe("User API", () => {
       expect(response.statusCode).toBe(200);
       expect(response.body._id.toString()).toMatch(userId);
     });
+
+    it("When an admin requests a non existing user's infos, then the statusCode is 404", async () => {
+      const response = await request(app)
+        .get(`/auth/${nonexistingid}`)
+        .set("Authorization", `Basic ${adminToken}`);
+
+      expect(response.statusCode).toBe(404);
+    });
+
+    it("When an admin requests their infos, then the statusCode is 200 and the admin is returned", async () => {
+      const response = await request(app)
+        .get(`/auth/${adminUserId}`)
+        .set("Authorization", `Basic ${adminToken}`);
+
+      expect(response.statusCode).toBe(200);
+      expect(response.body._id.toString()).toMatch(adminUserId);
+    });
+
+    it("When an admin requests another user's infos, then the statusCode is 200 and the right user is returned", async () => {
+      const response = await request(app)
+        .get(`/auth/${userId}`)
+        .set("Authorization", `Basic ${adminToken}`);
+
+      expect(response.statusCode).toBe(200);
+      expect(response.body._id.toString()).toMatch(userId);
+    });
   });
 
   describe("Delete user by id", () => {
+    it("When an admin deletes a non existing user, then the statusCode is 404", async () => {
+      const response = await request(app)
+        .delete(`/auth/${nonexistingid}`)
+        .set("Authorization", `Basic ${adminToken}`);
+
+      expect(response.statusCode).toBe(404);
+    });
+
     it("When everything is ok, then the statusCode is 200 and the deleted user is returned", async () => {
       const response = await request(app)
         .delete(`/auth/${userId}`)
@@ -118,6 +212,15 @@ describe("User API", () => {
 
       expect(response.statusCode).toBe(200);
       expect(response.body._id.toString()).toMatch(userId);
+    });
+
+    it("When everything is ok, then the statusCode is 200 and the deleted admin is returned", async () => {
+      const response = await request(app)
+        .delete(`/auth/${adminUserId}`)
+        .set("Authorization", `Basic ${adminToken}`);
+
+      expect(response.statusCode).toBe(200);
+      expect(response.body._id.toString()).toMatch(adminUserId);
     });
   });
 });

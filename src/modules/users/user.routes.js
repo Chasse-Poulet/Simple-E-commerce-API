@@ -8,7 +8,7 @@ const userController = require("./user.controller");
 
 const router = express.Router();
 
-router.get("/", userController.getAllUsers);
+router.get("/", authenticateToken, authorizeAdmin, userController.getAllUsers);
 router.post("/signup", userController.signup);
 router.post("/login", userController.login);
 
