@@ -17,11 +17,8 @@ exports.getAllUsers = async (req, res) => {
 exports.signup = async (req, res) => {
   const hash = await bcrypt.hash(req.body.password, 10);
 
-  const user = {
-    email: req.body.email,
-    password: hash,
-    username: req.body.username,
-  };
+  const user = { ...req.body };
+  user.password = hash;
 
   UserService.signup(user)
     .then(() => {

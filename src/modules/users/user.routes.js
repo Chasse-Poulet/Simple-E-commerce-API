@@ -1,5 +1,9 @@
 const express = require("express");
-const auth = require("../../middleware/auth");
+const {
+  authenticateToken,
+  authorizeSelfOrAdmin,
+  authorizeAdmin,
+} = require("../../middleware/auth");
 const userController = require("./user.controller");
 
 const router = express.Router();
@@ -10,7 +14,11 @@ router.post("/login", userController.login);
 
 router
   .route("/:userId")
-  .get(auth, userController.getUserById)
-  .delete(auth, userController.deleteUserById);
+  .get(authenticateToken, authorizeSelfOrAdmin, userController.getUserById)
+  .delete(
+    authenticateToken,
+    authorizeSelfOrAdmin,
+    userController.deleteUserById
+  );
 
 module.exports = router;
