@@ -26,7 +26,7 @@ describe("User API", () => {
   let adminToken;
 
   describe("User signup", () => {
-    it("When the data is malformed, then the statusCode is 500", async () => {
+    it("When the data is malformed, then the statusCode is 400", async () => {
       const userData = {
         email: { malformed: "yes" },
         password: "a",
@@ -35,7 +35,7 @@ describe("User API", () => {
 
       const response = await request(app).post("/auth/signup").send(userData);
 
-      expect(response.statusCode).toBe(500);
+      expect(response.statusCode).toBe(400);
       expect(response.body).toHaveProperty("error");
     });
 

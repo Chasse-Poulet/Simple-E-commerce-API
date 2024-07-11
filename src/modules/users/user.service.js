@@ -14,7 +14,7 @@ exports.getUserByEmail = async (email) => {
 
 exports.signup = async (userData) => {
   const user = new User(userData);
-  return user.save();
+  return await user.save();
 };
 
 exports.deleteUser = async (id) => {

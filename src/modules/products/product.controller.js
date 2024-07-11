@@ -24,7 +24,7 @@ exports.createProduct = async (req, res) => {
     const product = await ProductService.createProduct(productData);
     res.status(201).json({ product, message: "Product added successfully." });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(400).json({ error: err.message });
   }
 };
 
@@ -42,7 +42,7 @@ exports.updateProduct = async (req, res) => {
 
     res.status(200).json(product);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(400).json({ error: err.message });
   }
 };
 
@@ -59,6 +59,6 @@ exports.deleteProduct = async (req, res) => {
 
     res.status(200).json(product);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(400).json({ error: err.message });
   }
 };

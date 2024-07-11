@@ -10,7 +10,7 @@ exports.getProductById = async (id) => {
 
 exports.createProduct = async (productData) => {
   const product = new Product(productData);
-  return product.save();
+  return await product.save();
 };
 
 exports.updateProduct = async (id, updateData) => {

@@ -104,13 +104,13 @@ describe("Product API", () => {
       expect(response.statusCode).toBe(403);
     });
 
-    it("When the data is malformed, then returns statusCode 500", async () => {
+    it("When the data is malformed, then returns statusCode 400", async () => {
       const response = await request(app)
         .post("/products")
         .set("Authorization", `Basic ${adminToken}`)
         .send(malformedProductData);
 
-      expect(response.statusCode).toBe(500);
+      expect(response.statusCode).toBe(400);
       expect(response.body).toHaveProperty("error");
     });
 
@@ -208,13 +208,13 @@ describe("Product API", () => {
       expect(response.statusCode).toBe(403);
     });
 
-    it("When an admin tries to update a product with malformed data, then fails and returns statusCode 500", async () => {
+    it("When an admin tries to update a product with malformed data, then fails and returns statusCode 400", async () => {
       const response = await request(app)
         .put(`/products/${product._id}`)
         .set("Authorization", `Basic ${adminToken}`)
         .send(malformedUpdateData);
 
-      expect(response.statusCode).toBe(500);
+      expect(response.statusCode).toBe(400);
       expect(response.body).toHaveProperty("error");
     });
 
