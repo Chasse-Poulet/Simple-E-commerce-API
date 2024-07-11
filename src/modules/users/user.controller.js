@@ -4,13 +4,7 @@ const jwt = require("jsonwebtoken");
 const UserService = require("./user.service");
 
 exports.getAllUsers = async (req, res) => {
-  let users = await UserService.getAllUsers();
-
-  if (!users) {
-    res.status(404).json({ error: "Users not found !" });
-    return;
-  }
-
+  const users = await UserService.getAllUsers();
   res.json(users);
 };
 
