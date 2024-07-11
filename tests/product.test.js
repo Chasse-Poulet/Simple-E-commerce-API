@@ -1,14 +1,13 @@
 const request = require("supertest");
-const app = require("../app");
 const mongoose = require("mongoose");
 const { MongoMemoryServer } = require("mongodb-memory-server");
+const app = require("../app");
+const userFactory = require("./factories/user.factory");
+const productFactory = require("./factories/product.factory");
 
 let mongoServer;
 
-let userId;
 let token;
-
-let adminUserId;
 let adminToken;
 
 beforeAll(async () => {
@@ -18,13 +17,13 @@ beforeAll(async () => {
 
   // Normal user
 
-  let userData = {
+  let user = userFactory({
     email: "baboulinet@test.com",
     password: "imbaboulinet",
     username: "baboulinet",
-  };
+  });
 
-  let response = await request(app).post("/auth/signup").send(userData);
+  let response = await request(app).post("/auth/signup").send(user);
 
   let loginData = {
     email: "baboulinet@test.com",
@@ -33,19 +32,18 @@ beforeAll(async () => {
 
   response = await request(app).post("/auth/login").send(loginData);
 
-  userId = response.body.userId;
   token = response.body.token;
 
   // Admin
 
-  userData = {
+  user = userFactory({
     email: "barryallen@flash.com",
     password: "iamtheflash",
     username: "Flash",
     isAdmin: true,
-  };
+  });
 
-  response = await request(app).post("/auth/signup").send(userData);
+  response = await request(app).post("/auth/signup").send(user);
 
   loginData = {
     email: "barryallen@flash.com",
@@ -54,7 +52,6 @@ beforeAll(async () => {
 
   response = await request(app).post("/auth/login").send(loginData);
 
-  adminUserId = response.body.userId;
   adminToken = response.body.token;
 });
 
@@ -66,15 +63,11 @@ afterAll(async () => {
 describe("Product API", () => {
   const nonexistingid = "000000000000000000000000";
 
-  const malformedProductData = {
-    name: "Awesome product",
-    price: { malformed: true, value: 10 },
-  };
+  const malformedProductData = productFactory({
+    price: { malformed: true },
+  });
 
-  const productData = {
-    name: "Awesome product",
-    price: 10,
-  };
+  const productData = productFactory();
 
   const malformedUpdateData = {
     name: "Awesome modified product",

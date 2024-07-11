@@ -1,7 +1,8 @@
 const request = require("supertest");
-const app = require("../app");
 const mongoose = require("mongoose");
 const { MongoMemoryServer } = require("mongodb-memory-server");
+const app = require("../app");
+const userFactory = require("./factories/user.factory");
 
 let mongoServer;
 
@@ -19,19 +20,18 @@ afterAll(async () => {
 describe("User API", () => {
   const nonexistingid = "000000000000000000000000";
 
-  let userId;
-  let token;
+  let user;
+  let admin;
 
-  let adminUserId;
+  let userId;
+  let usertoken;
+
+  let adminId;
   let adminToken;
 
   describe("User signup", () => {
     it("When the data is malformed, then the statusCode is 400", async () => {
-      const userData = {
-        email: { malformed: "yes" },
-        password: "a",
-        username: "a",
-      };
+      const userData = userFactory({ email: { malformed: true } });
 
       const response = await request(app).post("/auth/signup").send(userData);
 
@@ -40,13 +40,13 @@ describe("User API", () => {
     });
 
     it("When everything is ok, then it creates a new user", async () => {
-      const userData = {
+      user = userFactory({
         email: "baboulinet@test.com",
         password: "imbaboulinet",
         username: "baboulinet",
-      };
+      });
 
-      const response = await request(app).post("/auth/signup").send(userData);
+      const response = await request(app).post("/auth/signup").send(user);
 
       expect(response.statusCode).toBe(201);
       expect(response.body).toMatchObject({
@@ -55,14 +55,14 @@ describe("User API", () => {
     });
 
     it("When everything is ok, then it creates a new admin", async () => {
-      const userData = {
+      admin = userFactory({
         email: "barryallen@flash.com",
         password: "iamtheflash",
         username: "Flash",
         isAdmin: true,
-      };
+      });
 
-      const response = await request(app).post("/auth/signup").send(userData);
+      const response = await request(app).post("/auth/signup").send(admin);
 
       expect(response.statusCode).toBe(201);
       expect(response.body).toMatchObject({
@@ -86,8 +86,8 @@ describe("User API", () => {
 
     it("When the password is invalid, then the statusCode is 401", async () => {
       const loginData = {
-        email: "baboulinet@test.com",
-        password: "shitpissfuckcuntcocksuckermotherfuckertitsfartturdandtwat",
+        email: user.email,
+        password: "invalidpassword",
       };
 
       const response = await request(app).post("/auth/login").send(loginData);
@@ -98,27 +98,26 @@ describe("User API", () => {
 
     it("When a normal user logs in, then the statusCode is 200 and the token is returned", async () => {
       const loginData = {
-        email: "baboulinet@test.com",
-        password: "imbaboulinet",
+        email: user.email,
+        password: user.password,
       };
 
       const response = await request(app).post("/auth/login").send(loginData);
+      userId = response.body.userId;
+      usertoken = response.body.token;
 
       expect(response.statusCode).toBe(200);
       expect(response.body).toHaveProperty("token");
-
-      userId = response.body.userId;
-      token = response.body.token;
     });
 
     it("When an admin logs in, then the statusCode is 200 and the admin token is returned", async () => {
       const loginData = {
-        email: "barryallen@flash.com",
-        password: "iamtheflash",
+        email: admin.email,
+        password: admin.password,
       };
 
       const response = await request(app).post("/auth/login").send(loginData);
-      adminUserId = response.body.userId;
+      adminId = response.body.userId;
       adminToken = response.body.token;
 
       expect(response.statusCode).toBe(200);
@@ -130,7 +129,7 @@ describe("User API", () => {
     it("When a non admin user calls it, then return statusCode 403", async () => {
       const response = await request(app)
         .get("/auth")
-        .set("Authorization", `Basic ${token}`);
+        .set("Authorization", `Basic ${usertoken}`);
 
       expect(response.statusCode).toBe(403);
     });
@@ -154,8 +153,8 @@ describe("User API", () => {
 
     it("When a normal user requests another user's infos, then the statusCode is 403", async () => {
       const response = await request(app)
-        .get(`/auth/${adminUserId}`)
-        .set("Authorization", `Basic ${token}`);
+        .get(`/auth/${adminId}`)
+        .set("Authorization", `Basic ${usertoken}`);
 
       expect(response.statusCode).toBe(403);
     });
@@ -163,7 +162,7 @@ describe("User API", () => {
     it("When a user requests their infos, then the statusCode is 200 and the right user is returned", async () => {
       const response = await request(app)
         .get(`/auth/${userId}`)
-        .set("Authorization", `Basic ${token}`);
+        .set("Authorization", `Basic ${usertoken}`);
 
       expect(response.statusCode).toBe(200);
       expect(response.body._id.toString()).toMatch(userId);
@@ -179,11 +178,11 @@ describe("User API", () => {
 
     it("When an admin requests their infos, then the statusCode is 200 and the admin is returned", async () => {
       const response = await request(app)
-        .get(`/auth/${adminUserId}`)
+        .get(`/auth/${adminId}`)
         .set("Authorization", `Basic ${adminToken}`);
 
       expect(response.statusCode).toBe(200);
-      expect(response.body._id.toString()).toMatch(adminUserId);
+      expect(response.body._id.toString()).toMatch(adminId);
     });
 
     it("When an admin requests another user's infos, then the statusCode is 200 and the right user is returned", async () => {
@@ -208,7 +207,7 @@ describe("User API", () => {
     it("When everything is ok, then the statusCode is 200 and the deleted user is returned", async () => {
       const response = await request(app)
         .delete(`/auth/${userId}`)
-        .set("Authorization", `Basic ${token}`);
+        .set("Authorization", `Basic ${usertoken}`);
 
       expect(response.statusCode).toBe(200);
       expect(response.body._id.toString()).toMatch(userId);
@@ -216,11 +215,11 @@ describe("User API", () => {
 
     it("When everything is ok, then the statusCode is 200 and the deleted admin is returned", async () => {
       const response = await request(app)
-        .delete(`/auth/${adminUserId}`)
+        .delete(`/auth/${adminId}`)
         .set("Authorization", `Basic ${adminToken}`);
 
       expect(response.statusCode).toBe(200);
-      expect(response.body._id.toString()).toMatch(adminUserId);
+      expect(response.body._id.toString()).toMatch(adminId);
     });
   });
 });
