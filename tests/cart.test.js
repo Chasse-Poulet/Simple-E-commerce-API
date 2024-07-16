@@ -4,6 +4,7 @@ const { MongoMemoryServer } = require("mongodb-memory-server");
 const app = require("../app");
 const userFactory = require("./factories/user.factory");
 const productFactory = require("./factories/product.factory");
+const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY_TEST);
 
 let mongoServer;
 
@@ -105,5 +106,60 @@ describe("Cart API", () => {
 
     expect(response.statusCode).toBe(200);
     expect(response.body.items.length).toBe(0);
+  });
+
+  it("When checking out, then the paymentIntent.client_secret is returned", async () => {
+    const productData1 = productFactory({ name: "Product 1", price: 100 });
+    const productData2 = productFactory({ name: "Product 2", price: 40 });
+
+    let product1;
+    let product2;
+
+    let orders;
+    let clientSecret;
+
+    let response = await request(app)
+      .post("/products")
+      .set("Authorization", `Basic ${adminToken}`)
+      .send(productData1);
+    product1 = response.body.product;
+
+    response = await request(app)
+      .post("/products")
+      .set("Authorization", `Basic ${adminToken}`)
+      .send(productData2);
+    product2 = response.body.product;
+
+    response = await request(app)
+      .post("/cart/add")
+      .set("Authorization", `Basic ${userToken}`)
+      .send({ userId, productId: product1._id, quantity: 1 });
+
+    response = await request(app)
+      .post("/cart/add")
+      .set("Authorization", `Basic ${userToken}`)
+      .send({ userId, productId: product2._id, quantity: 2 });
+    cart = response.body;
+
+    response = await request(app)
+      .post("/cart/checkout")
+      .set("Authorization", `Basic ${userToken}`)
+      .send({ userId });
+    cart = response.body.cart;
+    clientSecret = response.body.client_secret;
+
+    response = await request(app)
+      .get(`/users/${userId}/orders`)
+      .set("Authorization", `Basic ${userToken}`);
+    orders = response.body;
+
+    expect(cart.items.length).toEqual(2);
+    expect(cart.paymentIntentId).toBeDefined();
+
+    expect(orders).toHaveProperty("length");
+    expect(orders.length).toEqual(1);
+    expect(orders[0].status).toMatch("Pending");
+
+    expect(clientSecret).toBeDefined();
   });
 });

@@ -61,3 +61,9 @@ exports.removeFromCart = async (userId, productId) => {
   await cart.save();
   return cart;
 };
+
+exports.findCartByPaymentIntentAndEmpty = async (paymentIntentId) => {
+  const cart = await Cart.findOne({ paymentIntentId });
+  delete cart.items;
+  await cart.save();
+};

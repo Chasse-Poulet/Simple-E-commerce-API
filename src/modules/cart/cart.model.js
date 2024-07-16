@@ -13,6 +13,7 @@ const cartSchema = new Schema({
   user: { type: Schema.Types.ObjectId, ref: "User", required: true },
   items: [cartItemSchema],
   totalPrice: { type: Number, required: true, default: 0 },
+  paymentIntentId: { type: String },
 });
 
 const Cart = model("Cart", cartSchema);
