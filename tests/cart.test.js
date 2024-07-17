@@ -31,14 +31,14 @@ beforeAll(async () => {
     username: "baboulinet",
   });
 
-  let response = await request(app).post("/auth/signup").send(user);
+  let response = await request(app).post("/users/signup").send(user);
 
   let loginData = {
     email: "baboulinet@test.com",
     password: "imbaboulinet",
   };
 
-  response = await request(app).post("/auth/login").send(loginData);
+  response = await request(app).post("/users/login").send(loginData);
 
   userId = response.body.userId;
   userToken = response.body.token;
@@ -52,14 +52,14 @@ beforeAll(async () => {
     isAdmin: true,
   });
 
-  response = await request(app).post("/auth/signup").send(user);
+  response = await request(app).post("/users/signup").send(user);
 
   loginData = {
     email: "barryallen@flash.com",
     password: "iamtheflash",
   };
 
-  response = await request(app).post("/auth/login").send(loginData);
+  response = await request(app).post("/users/login").send(loginData);
 
   adminId = response.body.userId;
   adminToken = response.body.token;

@@ -15,9 +15,9 @@ app.use(express.json());
 app.use(cors());
 
 // Routes setup
-app.use("/auth", userRouter);
 app.use("/products", productRouter);
 app.use("/cart", cartRouter);
+app.use("/users", userRouter);
 app.use("/users/:userId/orders", orderRouter);
 app.use("/webhook/stripe", stripeController);
 

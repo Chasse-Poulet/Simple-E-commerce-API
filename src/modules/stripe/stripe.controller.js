@@ -1,6 +1,6 @@
 const OrderService = require("../orders/order.service");
 const CartService = require("../cart/cart.service");
-const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
+const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY_TEST);
 
 const handlePaymentIntentSucceeded = async (res, intent) => {
   try {
