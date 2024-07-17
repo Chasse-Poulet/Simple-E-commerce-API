@@ -1,6 +1,14 @@
 const Cart = require("./cart.model");
 const Product = require("../products/product.model");
 
+exports.getCartByUser = async (userId) => {
+  const cart = await Cart.findOne({ user: userId });
+  if (!cart) {
+    throw new Error("Cart not found !");
+  }
+  return cart;
+};
+
 exports.addToCart = async (userId, productId, quantity) => {
   const product = await Product.findById(productId);
   if (!product) {

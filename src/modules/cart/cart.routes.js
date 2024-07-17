@@ -6,6 +6,13 @@ const cartController = require("./cart.controller");
 
 const router = express.Router();
 
+router.get(
+  "/:userId",
+  authenticateToken,
+  verifyUser,
+  cartController.getCartByUser
+);
+
 router.post("/add", authenticateToken, verifyUser, cartController.addToCart);
 router.post(
   "/remove",

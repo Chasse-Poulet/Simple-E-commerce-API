@@ -1,6 +1,16 @@
 const CartService = require("./cart.service");
 const OrderService = require("../orders/order.service");
-const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
+const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY_TEST);
+
+exports.getCartByUser = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const cart = await CartService.getCartByUser(userId);
+    res.status(200).json(cart);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+};
 
 exports.addToCart = async (req, res) => {
   try {
