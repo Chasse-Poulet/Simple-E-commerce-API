@@ -21,8 +21,4 @@ app.use("/users", userRouter);
 app.use("/users/:userId/orders", orderRouter);
 app.use("/webhook/stripe", stripeController);
 
-// app.get("/", (req, res) => {
-//   res.send("Hello World!");
-// });
-
 module.exports = app;
